@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6f7f4;
+  --foreground: #14201a;
 }
 
 @theme inline {
@@ -12,15 +12,37 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Light styling for Leaflet's built-in bits */
+.leaflet-container {
+  background: #eef0ec !important;
+  font-family: inherit;
+}
+
+.leaflet-tooltip {
+  background: #ffffff;
+  color: #14201a;
+  border: 1px solid #e4e7e2;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(20, 32, 26, 0.12);
+  font-weight: 500;
+}
+
+.leaflet-tooltip-top::before {
+  border-top-color: #e4e7e2;
+}
+
+/* Soft pulse on high risk markers */
+@keyframes shuka-pulse {
+  0%, 100% { stroke-opacity: 0.9; }
+  50% { stroke-opacity: 0.25; }
+}
+
+.marker-high {
+  animation: shuka-pulse 2s ease-in-out infinite;
 }
