@@ -1,9 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { mockLocations } from "../data/Mocklocations";
 import { RISK_STYLES } from "@/lib/risk";
+import { fetchLocations } from "@/lib/api";
+import type { LocationRisk } from "@/types/location";
 import SidePanel from "@/components/SidePanel";
 
 // Leaflet needs the browser's "window", so the map must only load in the browser
@@ -16,10 +18,24 @@ export default function Dashboard() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const panelRef = useRef<HTMLElement>(null);
 
-  const selected = mockLocations.find((l) => l.id === selectedId) ?? null;
-  const highRisk = mockLocations.filter((l) => l.riskLevel === "high");
-  const totalFarmers = mockLocations.reduce((sum, l) => sum + l.farmersRegistered, 0);
-  const topRisk = [...mockLocations].sort((a, b) => b.riskPercent - a.riskPercent).slice(0, 5);
+  // Start with mock data so the page never looks empty,
+  // then replace it with data from the backend if the backend is running
+  const [locations, setLocations] = useState<LocationRisk[]>(mockLocations);
+  const [source, setSource] = useState<"api" | "mock">("mock");
+
+  useEffect(() => {
+    fetchLocations()
+      .then((data) => {
+        setLocations(data);
+        setSource("api");
+      })
+      .catch(() => console.warn("Backend not reachable, showing mock data"));
+  }, []);
+
+  const selected = locations.find((l) => l.id === selectedId) ?? null;
+  const highRisk = locations.filter((l) => l.riskLevel === "high");
+  const totalFarmers = locations.reduce((sum, l) => sum + l.farmersRegistered, 0);
+  const topRisk = [...locations].sort((a, b) => b.riskPercent - a.riskPercent).slice(0, 5);
 
   function select(id: string) {
     setSelectedId(id);
@@ -33,25 +49,36 @@ export default function Dashboard() {
     <div className="flex min-h-screen flex-col bg-[#f6f7f4] text-zinc-900 lg:h-screen">
       {/* Header */}
       <header className="flex bg-white flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg text-lg">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-lg">
             🌱
           </div>
           <div>
             <h1 className="text-lg font-bold leading-tight">Shuka</h1>
-            {/* <p className="hidden text-xs text-zinc-500 sm:block">
+            <p className="hidden text-xs text-zinc-500 sm:block">
               NASA Earth observation turned into planting decisions
-            </p> */}
+            </p>
           </div>
         </div>
-        <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
-          Powered by NASA POWER
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              source === "api"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            {source === "api" ? "● Live API" : "● Demo data"}
+          </span>
+          <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+            Powered by NASA POWER
+          </span>
+        </div>
       </header>
 
       {/* Summary strip */}
       <div className="grid grid-cols-3 border-b bg-white border-zinc-200 text-center sm:text-left">
-        <Stat label="States monitored" value={mockLocations.length} />
+        <Stat label="States monitored" value={locations.length} />
         <Stat label="High risk" value={highRisk.length} accent="text-red-600" />
         <Stat label="Farmers covered" value={totalFarmers.toLocaleString()} />
       </div>
@@ -59,7 +86,7 @@ export default function Dashboard() {
       {/* Map + panel. Stacked on mobile, side by side on large screens */}
       <main className="flex flex-1 flex-col lg:flex-row lg:overflow-hidden">
         <section className="h-[55vh] lg:h-auto lg:flex-1">
-          <RiskMap locations={mockLocations} selectedId={selectedId} onSelect={select} />
+          <RiskMap locations={locations} selectedId={selectedId} onSelect={select} />
         </section>
 
         <aside
