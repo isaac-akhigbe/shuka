@@ -4,8 +4,9 @@ import { useState } from "react";
 import type { LocationRisk } from "@/types/location";
 import { RISK_STYLES } from "@/lib/risk";
 import RainChart from "@/components/RainChart";
+import { sendAlert } from "@/lib/api";
 
-type CallState = "idle" | "calling" | "sent";
+type CallState = "idle" | "calling" | "sent" | "failed";
 
 interface Props {
   location: LocationRisk;
@@ -14,13 +15,21 @@ interface Props {
 
 export default function SidePanel({ location, onClose }: Props) {
   const [callState, setCallState] = useState<CallState>("idle");
+  const [error, setError] = useState<string | null>(null);
   const style = RISK_STYLES[location.riskLevel];
   const isWait = location.verdict === "wait";
 
-
-  function sendAlert() {
+  // Asks the backend to place the call. The backend talks to Twilio.
+  async function handleSend() {
     setCallState("calling");
-    setTimeout(() => setCallState("sent"), 1800);
+    setError(null);
+    try {
+      await sendAlert(location.id);
+      setCallState("sent");
+    } catch (err) {
+      setCallState("failed");
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    }
   }
 
   return (
@@ -82,17 +91,19 @@ export default function SidePanel({ location, onClose }: Props) {
 
       {/* Call to action */}
       <button
-        onClick={sendAlert}
-        disabled={callState !== "idle"}
+        onClick={handleSend}
+        disabled={callState === "calling" || callState === "sent"}
         className={`w-full rounded-xl px-5 py-4 text-base font-semibold transition
           ${callState === "sent"
             ? "bg-emerald-600 text-white"
             : "bg-zinc-900 text-white hover:bg-zinc-800 disabled:opacity-70"}`}
       >
-        {callState === "idle" && `📞 Send Hausa voice alert to ${location.farmersRegistered} farmers`}
+        {callState === "idle" && `Send voice alert to ${location.farmersRegistered} farmers`}
         {callState === "calling" && "Calling farmers…"}
-        {callState === "sent" && "✓ Alert sent"}
+        {callState === "sent" && "✓ Phone is ringing"}
+        {callState === "failed" && "Try again"}
       </button>
+      {error && <p className="-mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

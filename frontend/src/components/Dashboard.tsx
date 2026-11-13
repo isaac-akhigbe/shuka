@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { mockLocations } from "../data/Mocklocations";
 import { RISK_STYLES } from "@/lib/risk";
@@ -49,7 +50,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen flex-col bg-[#f6f7f4] text-zinc-900 lg:h-screen">
       {/* Header */}
       <header className="flex bg-white flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-lg">
             🌱
           </div>
@@ -59,7 +60,7 @@ export default function Dashboard() {
               NASA Earth observation turned into planting decisions
             </p>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${

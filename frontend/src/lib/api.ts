@@ -8,3 +8,10 @@ export async function fetchLocations(): Promise<LocationRisk[]> {
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
+
+export async function sendAlert(locationId: string): Promise<{ callId: string }> {
+  const res = await fetch(`${API_URL}/alert/${locationId}`, { method: "POST" });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail ?? `API error ${res.status}`);
+  return body;
+}
