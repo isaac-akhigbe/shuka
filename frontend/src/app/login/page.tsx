@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { login } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { demoLogin, fetchPlannerOptions, login } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +11,32 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
+
+  // Only show the demo button if the backend has demo mode switched on
+  useEffect(() => {
+    fetchPlannerOptions()
+      .then((o) => setDemoMode(o.demoMode))
+      .catch(() => {});
+  }, []);
+
+  function goNext() {
+    // Go back to where the officer came from (e.g. ?next=/plan?state=kano), or to Farmers
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next && next.startsWith("/") ? next : "/farmers");
+  }
+
+  async function handleDemo() {
+    setBusy(true);
+    setError(null);
+    try {
+      await demoLogin();
+      goNext();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start the demo");
+      setBusy(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,9 +44,7 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(username, password);
-      // Go back to where the officer came from (e.g. ?next=/plan?state=kano), or to Farmers
-      const next = new URLSearchParams(window.location.search).get("next");
-      router.push(next && next.startsWith("/") ? next : "/farmers");
+      goNext();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in");
       setBusy(false);
@@ -33,6 +57,24 @@ export default function LoginPage() {
         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-xl">🌱</span>
         <span className="text-xl font-bold">Shuka</span>
       </Link>
+
+      {demoMode && (
+        <div className="mb-4 w-full max-w-sm rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+          <p className="text-sm font-semibold text-emerald-900">Judging or exploring Shuka?</p>
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={busy}
+            className="mt-3 w-full rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {busy ? "Starting demo…" : "Try the demo as Kano officer →"}
+          </button>
+          <p className="mt-2 text-xs text-emerald-800">
+            Or sign in below with <span className="font-mono">kano.officer</span> /{" "}
+            <span className="font-mono">shuka2026</span>
+          </p>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit}

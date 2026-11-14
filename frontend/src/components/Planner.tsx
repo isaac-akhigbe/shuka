@@ -6,6 +6,7 @@ import { fetchPlannerOptions, fetchRecommendation, fetchStates, sendAlert } from
 import { RISK_STYLES } from "@/lib/risk";
 import type { PlannerOptions, Recommendation, StateSummary } from "@/types/shuka";
 import RotationCard from "@/components/RotationCard";
+import BriefingPanel from "@/components/BriefingPanel";
 import OfficerMenu from "@/components/OfficerMenu";
 import { useSession } from "@/lib/session";
 
@@ -29,11 +30,13 @@ export default function Planner({ initialState }: { initialState: string }) {
       .then(([s, o]) => {
         setStates(s);
         setOptions(o);
+        const here = s.find((x) => x.id === initialState);
+        if (here) setCurrent(here.typicalPractice);
       })
       .catch(() => setError("Can't reach the Shuka backend. Is uvicorn running on port 8000?"));
-  }, []);
+  }, [initialState]);
 
-  // Ask the backend again whenever the farmer changes an answer
+  // Ask the backend again whenever the officer changes an answer
   useEffect(() => {
     let cancelled = false;
     fetchRecommendation(stateId, current, priority)
@@ -99,7 +102,12 @@ export default function Planner({ initialState }: { initialState: string }) {
           <Field label="1. Which state are you advising?">
             <select
               value={stateId}
-              onChange={(e) => setStateId(e.target.value)}
+              onChange={(e) => {
+                setStateId(e.target.value);
+                // Start from what farmers there usually grow
+                const here = states.find((x) => x.id === e.target.value);
+                if (here) setCurrent(here.typicalPractice);
+              }}
               className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5"
             >
               {states.map((s) => (
@@ -109,7 +117,7 @@ export default function Planner({ initialState }: { initialState: string }) {
               ))}
             </select>
           </Field>
-          <Field label="2. What do most farmers there plant now?">
+          <Field label="2. What do farmers there usually grow?">
             <select
               value={current}
               onChange={(e) => setCurrent(e.target.value)}
@@ -121,8 +129,13 @@ export default function Planner({ initialState }: { initialState: string }) {
                 </option>
               ))}
             </select>
+            {states.find((x) => x.id === stateId)?.typicalPractice === current ? (
+              <p className="mt-1.5 text-xs text-zinc-500">Typical for this area. Change it if your farmers differ.</p>
+            ) : (
+              <p className="mt-1.5 text-xs text-zinc-500">Changed from the typical practice for this area.</p>
+            )}
           </Field>
-          <Field label="3. What do they need most?">
+          <Field label="3. What is their biggest problem?">
             <div className="flex flex-wrap gap-2">
               {options?.priorities.map((p) => (
                 <button
@@ -184,6 +197,24 @@ export default function Planner({ initialState }: { initialState: string }) {
                 <RotationCard key={o.id} option={o} recommended={o.id === result.recommendedId} />
               ))}
             </div>
+
+            {/* AI briefing for the future call agent (officers only) */}
+            {canSend ? (
+              <BriefingPanel stateId={stateId} stateName={result.state.name} current={current} priority={priority} />
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-violet-300 bg-violet-50/50 p-5 text-sm text-violet-900">
+                <span className="font-semibold">✨ AI farmer briefing.</span> Extension officers can turn this
+                advice into a plain-language briefing and farmer Q&amp;A for the Shuka call agent.{" "}
+                {!session && (
+                  <Link
+                    href={`/login?next=${encodeURIComponent(`/plan?state=${stateId}`)}`}
+                    className="font-semibold underline"
+                  >
+                    Sign in to try it
+                  </Link>
+                )}
+              </div>
+            )}
 
             {/* Voice call */}
             <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">

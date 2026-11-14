@@ -107,4 +107,4 @@ def current_officer(authorization: str | None = Header(default=None)) -> dict:
 def require_state_access(officer: dict, state_id: str) -> None:
     """Officers can only work in their own state. Admins can work anywhere."""
     if officer["role"] != "admin" and officer["stateId"] != state_id:
-        raise HTTPException(status_code=403, detail="You can only manage farmers in your own state")
+        raise HTTPException(status_code=403, detail="You can only work in your own state")

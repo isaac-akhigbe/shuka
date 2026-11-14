@@ -1,4 +1,6 @@
 import type {
+  Briefing,
+  BriefingContent,
   DataStatus,
   Farmer,
   ImportResult,
@@ -53,6 +55,12 @@ export async function login(username: string, password: string): Promise<Session
   return session;
 }
 
+export async function demoLogin(): Promise<Session> {
+  const session = await request<Session>("/auth/demo", { method: "POST" });
+  saveSession(session);
+  return session;
+}
+
 export async function logout() {
   try {
     await request("/auth/logout", { method: "POST" }, true);
@@ -76,3 +84,24 @@ export const deleteFarmer = (id: number) =>
 
 export const sendAlert = (stateId: string) =>
   request<{ callId: string; farmers: number }>(`/alert/${stateId}`, { method: "POST" }, true);
+
+// ---------- AI briefings (signed in) ----------
+
+export const generateBriefing = (state: string, current: string, priority: string, language: string) =>
+  request<Briefing>(
+    "/briefings",
+    { method: "POST", body: JSON.stringify({ state, current, priority, language }) },
+    true
+  );
+
+export const fetchLatestBriefing = (state: string) =>
+  request<Briefing | null>(`/briefings/latest/${state}`, {}, true);
+
+export const saveBriefing = (id: number, content: BriefingContent) =>
+  request<Briefing>(`/briefings/${id}`, { method: "PUT", body: JSON.stringify({ content }) }, true);
+
+export const approveBriefing = (id: number) =>
+  request<Briefing>(`/briefings/${id}/approve`, { method: "POST" }, true);
+
+export const fetchAgentContext = (state: string) =>
+  request<Record<string, unknown>>(`/agent-context/${state}`, {}, true);

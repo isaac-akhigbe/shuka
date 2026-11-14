@@ -171,6 +171,17 @@ def _change(old: float, new: float) -> float:
     return round((new - old) / old * 100, 1) if old else 0.0
 
 
+def typical_practice(dry_year_rain: float) -> str:
+    """A sensible starting guess for what farmers grow, from how much rain a dry year brings.
+    Far north (dry) is millet country, the middle is guinea corn, the wetter south grows more maize.
+    The officer can always change it."""
+    if dry_year_rain < 500:
+        return "milletcowpea-milletcowpea"
+    if dry_year_rain < 800:
+        return "sorghumcowpea-sorghumcowpea"
+    return "maize-maize"
+
+
 def risk_level(rate: float) -> str:
     if rate >= 0.30:
         return "high"
@@ -280,6 +291,7 @@ def all_states_summary() -> list[dict]:
             "seasonalRainMean": p["seasonalRainMean"],
             "seasonLengthMedian": p["seasonLengthMedian"],
             "safePlantingFrom": p["safePlantingFrom"],
+            "typicalPractice": typical_practice(p["seasonalRainDryYear"]),
         })
     return out
 

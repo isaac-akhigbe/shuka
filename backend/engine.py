@@ -10,11 +10,11 @@ from rotations import ROTATIONS
 from states import STATES_BY_ID
 
 PRIORITIES = {
-    "balanced": {"label": "A good balance", "weights": {"water": 0.3, "climate": 0.3, "soil": 0.2, "income": 0.2}},
-    "water": {"label": "Save water", "weights": {"water": 0.45, "climate": 0.3, "soil": 0.1, "income": 0.15}},
-    "soil": {"label": "Improve soil", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.45, "income": 0.15}},
-    "income": {"label": "Higher income", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.15, "income": 0.45}},
-    "risk": {"label": "Lower risk", "weights": {"water": 0.25, "climate": 0.5, "soil": 0.1, "income": 0.15}},
+    "balanced": {"label": "No single main problem", "weights": {"water": 0.3, "climate": 0.3, "soil": 0.2, "income": 0.2}},
+    "water": {"label": "Not enough rain for their crops", "weights": {"water": 0.45, "climate": 0.3, "soil": 0.1, "income": 0.15}},
+    "soil": {"label": "Soil is tired, needs more fertiliser each year", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.45, "income": 0.15}},
+    "income": {"label": "Harvest doesn't earn enough", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.15, "income": 0.45}},
+    "risk": {"label": "Crops die in dry spells", "weights": {"water": 0.25, "climate": 0.5, "soil": 0.1, "income": 0.15}},
 }
 
 

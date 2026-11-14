@@ -21,6 +21,7 @@ export interface StateSummary {
   seasonLengthMedian: number;
   safePlantingFrom: string;
   farmerCount: number;
+  typicalPractice: string; // rotation id, a starting guess for what farmers grow here
 }
 
 // One year's season (inside the profile)
@@ -101,6 +102,7 @@ export interface PlannerOptions {
   currentRotations: { id: string; name: string }[];
   priorities: { id: string; label: string }[];
   languages: string[];
+  demoMode: boolean;
 }
 
 // A signed-in extension officer
@@ -147,4 +149,34 @@ export interface DataStatus {
   lastSyncedAt: string | null;
   latestDataDay: string | null;
   totalDays: number;
+}
+
+// AI-written briefing that a future call agent will use as context
+export interface BriefingContent {
+  officerSummary: string;
+  keyMessage: string;
+  plantingAdvice: string;
+  recommendationExplained: string;
+  alternatives: { name: string; whenToChoose: string }[];
+  warnings: string[];
+  faq: { question: string; answer: string }[];
+}
+
+export interface Briefing {
+  id: number;
+  stateId: string;
+  current: string;
+  priority: string;
+  language: string;
+  status: "draft" | "approved" | "archived";
+  source: "ai" | "template";
+  content: BriefingContent;
+  unverifiedNumbers: string[];
+  riskyTopics: string[];
+  handOverTopics: string[];
+  createdAt: string;
+  createdBy: string | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  needsReview: boolean;
 }

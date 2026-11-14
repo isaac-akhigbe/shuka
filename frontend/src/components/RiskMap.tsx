@@ -1,8 +1,8 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { useEffect } from "react";
-import { CircleMarker, LayersControl, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { CircleMarker, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
 import type { RiskLevel, StateSummary } from "@/types/shuka";
 import { RISK_STYLES } from "@/lib/risk";
 
@@ -13,6 +13,24 @@ interface Props {
 }
 
 const LEVELS: RiskLevel[] = ["high", "medium", "low"];
+
+// Two map styles. Switching swaps one TileLayer, which is simpler and sturdier
+// than react-leaflet's LayersControl (that one crashes on hot reload).
+const BASEMAPS = {
+  clean: {
+    label: "Clean",
+    url: "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png",
+    attribution:
+      '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  satellite: {
+    label: "Satellite",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attribution: "Imagery &copy; Esri, Maxar, Earthstar Geographics",
+  },
+} as const;
+
+type Basemap = keyof typeof BASEMAPS;
 
 // Makes sure the map has its correct size and zooms to show every state
 function FitToLocations({ locations }: { locations: StateSummary[] }) {
@@ -39,32 +57,27 @@ function FitToLocations({ locations }: { locations: StateSummary[] }) {
 }
 
 export default function RiskMap({ locations, selectedId, onSelect }: Props) {
+  const [basemap, setBasemap] = useState<Basemap>("clean");
+  const tiles = BASEMAPS[basemap];
+
+  // Next.js keeps visited pages alive in the background (React <Activity>) instead of
+  // removing them. Leaflet can't restart on the same element, so every time this page
+  // is hidden we bump a counter. The new key makes React build a brand new map
+  // when the page is shown again.
+  const [mapGeneration, setMapGeneration] = useState(0);
+  useLayoutEffect(() => () => setMapGeneration((g) => g + 1), []);
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
+        key={mapGeneration}
         center={[10.6, 8.3]}
         zoom={6}
         minZoom={4}
         scrollWheelZoom
         className="h-full w-full"
       >
-        {/* Map style switcher, top right corner */}
-        <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Clean">
-            <TileLayer
-              attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png"
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Satellite">
-            <TileLayer
-              attribution="Imagery &copy; Esri, Maxar, Earthstar Geographics"
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              maxZoom={18}
-            />
-          </LayersControl.BaseLayer>
-        </LayersControl>
+        <TileLayer key={basemap} attribution={tiles.attribution} url={tiles.url} maxZoom={18} />
         <FitToLocations locations={locations} />
 
         {locations.map((loc) => {
@@ -92,6 +105,21 @@ export default function RiskMap({ locations, selectedId, onSelect }: Props) {
           );
         })}
       </MapContainer>
+
+      {/* Map style switcher, top right. z-index keeps it above the map layers */}
+      <div className="absolute right-3 top-3 z-[1000] flex overflow-hidden rounded-lg border border-zinc-200 bg-white/95 text-xs font-semibold shadow-sm">
+        {(Object.keys(BASEMAPS) as Basemap[]).map((key) => (
+          <button
+            key={key}
+            onClick={() => setBasemap(key)}
+            className={`px-3 py-1.5 transition ${
+              basemap === key ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+            }`}
+          >
+            {BASEMAPS[key].label}
+          </button>
+        ))}
+      </div>
 
       {/* Legend. z-index keeps it above the map layers */}
       <div className="absolute bottom-6 left-3 z-[1000] rounded-xl border border-zinc-200 bg-white/90 shadow-sm px-3 py-2 text-[11px] backdrop-blur sm:px-4 sm:py-3 sm:text-xs">

@@ -68,6 +68,25 @@ def init() -> None:
                 created_at TEXT NOT NULL
             );
             CREATE INDEX IF NOT EXISTS farmers_by_state ON farmers(state_id);
+
+            -- AI-written briefings that a future call agent will use as context
+            CREATE TABLE IF NOT EXISTS briefings (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                state_id         TEXT NOT NULL,
+                current_rotation TEXT NOT NULL,
+                priority         TEXT NOT NULL,
+                language         TEXT NOT NULL,
+                status           TEXT NOT NULL,   -- draft, approved, archived
+                source           TEXT NOT NULL,   -- ai or template
+                content          TEXT NOT NULL,   -- the wording (JSON)
+                facts            TEXT NOT NULL,   -- the facts it was built from (JSON)
+                unverified       TEXT NOT NULL,   -- numbers not found in the facts (JSON)
+                data_day         TEXT,            -- newest NASA day when written
+                created_by       INTEGER REFERENCES officers(id),
+                created_at       TEXT NOT NULL,
+                approved_by      INTEGER REFERENCES officers(id),
+                approved_at      TEXT
+            );
             """
         )
 

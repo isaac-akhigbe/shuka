@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import auth
+import briefing
 import db
 import farmers
 import sync
@@ -109,6 +110,7 @@ def options():
         "currentRotations": [{"id": r, "name": ROTATIONS[r]["name"]} for r in CURRENT_OPTIONS],
         "priorities": [{"id": k, "label": v["label"]} for k, v in PRIORITIES.items()],
         "languages": farmers.LANGUAGES,
+        "demoMode": _demo_mode(),
     }
 
 
@@ -122,6 +124,20 @@ def get_recommendation(state: str, current: str = "maize-maize", priority: str =
 
 
 # ---------- officer sign-in ----------
+
+def _demo_mode() -> bool:
+    """One-click demo sign-in for judges. Set DEMO_MODE=false in .env to switch it off."""
+    return os.getenv("DEMO_MODE", "true").lower() != "false"
+
+
+@app.post("/auth/demo")
+def demo_login():
+    if not _demo_mode():
+        raise HTTPException(status_code=404, detail="Demo mode is switched off")
+    return auth.login(
+        os.getenv("DEMO_OFFICER_USERNAME", "kano.officer"),
+        os.getenv("DEMO_OFFICER_PASSWORD", "shuka2026"),
+    )
 
 class LoginBody(BaseModel):
     username: str
@@ -239,3 +255,67 @@ def send_alert(state_id: str, officer: dict = Depends(auth.current_officer)):
         "farmers": registered,
         "callId": call_id,
     }
+
+
+# ---------- AI briefings (officers only) ----------
+
+class BriefingRequest(BaseModel):
+    state: str
+    current: str = "maize-maize"
+    priority: str = "balanced"
+    language: str = "English"
+
+
+class BriefingEdit(BaseModel):
+    content: dict
+
+
+def _own_briefing(briefing_id: int, officer: dict) -> dict:
+    b = briefing.get(briefing_id)
+    if not b:
+        raise HTTPException(status_code=404, detail="Briefing not found")
+    auth.require_state_access(officer, b["stateId"])
+    return b
+
+
+@app.post("/briefings")
+def create_briefing(body: BriefingRequest, officer: dict = Depends(auth.current_officer)):
+    _check_state(body.state)
+    auth.require_state_access(officer, body.state)
+    if body.language not in briefing.LANGUAGES:
+        raise HTTPException(status_code=400, detail=f"Language must be one of {', '.join(briefing.LANGUAGES)}")
+    try:
+        return briefing.generate(body.state, body.current, body.priority, body.language, officer["id"])
+    except KeyError as err:
+        raise HTTPException(status_code=400, detail=str(err))
+
+
+@app.get("/briefings/latest/{state_id}")
+def latest_briefing(state_id: str, officer: dict = Depends(auth.current_officer)):
+    auth.require_state_access(officer, state_id)
+    return briefing.latest(state_id)
+
+
+@app.put("/briefings/{briefing_id}")
+def edit_briefing(briefing_id: int, body: BriefingEdit, officer: dict = Depends(auth.current_officer)):
+    _own_briefing(briefing_id, officer)
+    try:
+        return briefing.update_content(briefing_id, body.content)
+    except Exception as err:
+        raise HTTPException(status_code=400, detail=f"Briefing is not in the right shape: {err}")
+
+
+@app.post("/briefings/{briefing_id}/approve")
+def approve_briefing(briefing_id: int, officer: dict = Depends(auth.current_officer)):
+    _own_briefing(briefing_id, officer)
+    return briefing.approve(briefing_id, officer["id"])
+
+
+@app.get("/agent-context/{state_id}")
+def agent_context(state_id: str, officer: dict = Depends(auth.current_officer)):
+    """What a future call agent would receive: the latest APPROVED briefing only."""
+    auth.require_state_access(officer, state_id)
+    b = briefing.latest(state_id, approved_only=True)
+    if not b:
+        raise HTTPException(status_code=404, detail="No approved briefing for this state yet")
+    return briefing.agent_context(b)
