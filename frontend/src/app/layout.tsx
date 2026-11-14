@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Shuka · False onset early warning",
+  title: "Shuka",
   description:
-    "NASA Earth observation turned into planting decisions. Predictive false onset alerts for Nigerian farmers, delivered by voice in local languages.",
+    "NASA-powered crop planning for northern Nigeria. Crop rotation advice for extension officers and farmers, built on 26 years of NASA climate data.",
 };
 
 export const viewport: Viewport = {
