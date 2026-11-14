@@ -51,10 +51,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Shuka API", lifespan=lifespan)
 
-# Allow the Next.js frontend (running on port 3000) to call this API
+# Allow the Next.js frontend to call this API.
+# Locally that is port 3000. In production, set FRONTEND_URL to the Vercel address
+# (several can be given, separated by commas).
+_origins = ["http://localhost:3000"] + [
+    o.strip().rstrip("/") for o in os.getenv("FRONTEND_URL", "").split(",") if o.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
