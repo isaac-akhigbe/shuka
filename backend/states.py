@@ -1,4 +1,5 @@
 # The 19 northern states plus FCT, one point per state (the state capital).
+# NASA POWER data is about 50 km per grid cell, so one point per state is honest.
 
 STATES = [
     {"id": "kano", "name": "Kano", "lat": 12.00, "lon": 8.52},

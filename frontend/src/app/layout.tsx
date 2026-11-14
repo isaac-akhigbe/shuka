@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Shuka · False onset early warning",
   description:
-    "NASA Earth observation turned into planting decisions. Predictive false onset alerts for Nigerian farmers, delivered by Hausa voice.",
+    "NASA Earth observation turned into planting decisions. Predictive false onset alerts for Nigerian farmers, delivered by voice in local languages.",
 };
 
 export const viewport: Viewport = {

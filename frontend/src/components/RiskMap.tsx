@@ -3,11 +3,11 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect } from "react";
 import { CircleMarker, LayersControl, MapContainer, TileLayer, Tooltip, useMap } from "react-leaflet";
-import type { LocationRisk, RiskLevel } from "@/types/location";
+import type { RiskLevel, StateSummary } from "@/types/shuka";
 import { RISK_STYLES } from "@/lib/risk";
 
 interface Props {
-  locations: LocationRisk[];
+  locations: StateSummary[];
   selectedId: string | null;
   onSelect: (id: string) => void;
 }
@@ -15,11 +15,12 @@ interface Props {
 const LEVELS: RiskLevel[] = ["high", "medium", "low"];
 
 // Makes sure the map has its correct size and zooms to show every state
-function FitToLocations({ locations }: { locations: LocationRisk[] }) {
+function FitToLocations({ locations }: { locations: StateSummary[] }) {
   const map = useMap();
 
   useEffect(() => {
     const fit = () => {
+      if (locations.length === 0) return; // states not loaded yet
       map.invalidateSize();
       map.fitBounds(
         locations.map((l) => [l.lat, l.lon] as [number, number]),
@@ -69,11 +70,12 @@ export default function RiskMap({ locations, selectedId, onSelect }: Props) {
         {locations.map((loc) => {
           const isSelected = loc.id === selectedId;
           const color = RISK_STYLES[loc.riskLevel].color;
+          const riskPct = Math.round(loc.falseOnsetRate * 100);
           return (
             <CircleMarker
               key={loc.id}
               center={[loc.lat, loc.lon]}
-              radius={isSelected ? 20 : 8 + loc.riskPercent / 5}
+              radius={isSelected ? 20 : 8 + riskPct / 3}
               pathOptions={{
                 color: isSelected ? "#ffffff" : color,
                 weight: isSelected ? 3 : 2,
@@ -84,7 +86,7 @@ export default function RiskMap({ locations, selectedId, onSelect }: Props) {
               eventHandlers={{ click: () => onSelect(loc.id) }}
             >
               <Tooltip direction="top" offset={[0, -10]}>
-                {loc.name} · {loc.riskPercent}% risk
+                {loc.name} · false starts in {riskPct}% of seasons
               </Tooltip>
             </CircleMarker>
           );
@@ -94,7 +96,7 @@ export default function RiskMap({ locations, selectedId, onSelect }: Props) {
       {/* Legend. z-index keeps it above the map layers */}
       <div className="absolute bottom-6 left-3 z-[1000] rounded-xl border border-zinc-200 bg-white/90 shadow-sm px-3 py-2 text-[11px] backdrop-blur sm:px-4 sm:py-3 sm:text-xs">
         <p className="mb-2 font-semibold uppercase tracking-wider text-zinc-500">
-          False onset risk
+          False start risk
         </p>
         <ul className="space-y-1.5">
           {LEVELS.map((level) => (

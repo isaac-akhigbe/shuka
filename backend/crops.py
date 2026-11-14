@@ -26,7 +26,7 @@ CROPS = {
         "note": "High value and widely sold, but needs steady rain and fertile soil.",
     },
     "sorghum": {
-        "name": "Sorghum",
+        "name": "Guinea corn (sorghum)",
         "family": "cereal",
         "daysToMaturity": (90, 130),
         "waterNeedMm": (400, 600),
@@ -40,7 +40,7 @@ CROPS = {
         "note": "Handles dry spells and heat better than maize. Stalks are good animal feed.",
     },
     "millet": {
-        "name": "Pearl millet",
+        "name": "Millet",
         "family": "cereal",
         "daysToMaturity": (75, 100),
         "waterNeedMm": (300, 500),
@@ -54,7 +54,7 @@ CROPS = {
         "note": "The toughest cereal for short, dry seasons. Matures quickly.",
     },
     "cowpea": {
-        "name": "Cowpea (beans)",
+        "name": "Beans (cowpea)",
         "family": "legume",
         "daysToMaturity": (60, 90),
         "waterNeedMm": (300, 500),
@@ -82,7 +82,7 @@ CROPS = {
         "note": "Strong cash crop that also feeds the soil with nitrogen.",
     },
     "soybean": {
-        "name": "Soybean",
+        "name": "Soya beans",
         "family": "legume",
         "daysToMaturity": (90, 120),
         "waterNeedMm": (450, 700),
@@ -96,7 +96,7 @@ CROPS = {
         "note": "Good market and soil benefit, but needs more reliable rain.",
     },
     "sesame": {
-        "name": "Sesame (beniseed)",
+        "name": "Beniseed (sesame)",
         "family": "oilseed",
         "daysToMaturity": (90, 120),
         "waterNeedMm": (300, 500),

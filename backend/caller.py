@@ -1,3 +1,6 @@
+# Everything about making phone calls lives here.
+# To switch to Africa's Talking later, only this file changes.
+
 import os
 
 from twilio.rest import Client

@@ -1,4 +1,4 @@
-import type { RiskLevel } from "@/types/location";
+import type { RiskLevel } from "@/types/shuka";
 
 // One place for risk colours and labels, shared by the map, legend and panel
 export const RISK_STYLES: Record<

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import OfficerMenu from "@/components/OfficerMenu";
 
 // A small made-up rainfall pattern that tells the false onset story visually.
 // Each number is a day's rain height (0 to 100).
@@ -74,12 +75,15 @@ export default function Home() {
           </span>
           <span className="text-lg font-bold">Shuka</span>
         </Link>
-        <Link
-          href="/dashboard"
-          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
-        >
-          Open dashboard
-        </Link>
+        <div className="flex items-center gap-5">
+          <OfficerMenu />
+          <Link
+            href="/dashboard"
+            className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700"
+          >
+            Open dashboard
+          </Link>
+        </div>
       </nav>
 
       {/* Hero */}

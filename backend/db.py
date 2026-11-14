@@ -36,6 +36,38 @@ def init() -> None:
                 synced_at  TEXT NOT NULL,  -- when we last talked to NASA
                 last_day   TEXT            -- newest day we have
             );
+
+            -- Extension officers (and admins) who can sign in
+            CREATE TABLE IF NOT EXISTS officers (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                username      TEXT NOT NULL UNIQUE,
+                name          TEXT NOT NULL,
+                password_hash TEXT NOT NULL,   -- never the password itself
+                state_id      TEXT,            -- the state they cover (NULL for admin)
+                role          TEXT NOT NULL DEFAULT 'officer'  -- 'officer' or 'admin'
+            );
+
+            -- Who is signed in right now
+            CREATE TABLE IF NOT EXISTS sessions (
+                token      TEXT PRIMARY KEY,
+                officer_id INTEGER NOT NULL REFERENCES officers(id),
+                expires_at TEXT NOT NULL
+            );
+
+            -- Farmers who receive advice calls
+            CREATE TABLE IF NOT EXISTS farmers (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT NOT NULL,
+                phone      TEXT NOT NULL UNIQUE,  -- +234XXXXXXXXXX
+                state_id   TEXT NOT NULL,
+                lga        TEXT,
+                language   TEXT NOT NULL DEFAULT 'Hausa',
+                crops      TEXT,                  -- e.g. "millet, beans"
+                consent    INTEGER NOT NULL DEFAULT 1,  -- agreed to receive calls
+                added_by   INTEGER REFERENCES officers(id),
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS farmers_by_state ON farmers(state_id);
             """
         )
 

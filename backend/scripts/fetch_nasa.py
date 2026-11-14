@@ -1,3 +1,12 @@
+"""Download NASA POWER daily data for every state and save it as JSON.
+
+Run once from the backend folder:
+    python scripts/fetch_nasa.py
+
+It saves one file per state in data/nasa/, e.g. data/nasa/kano.json.
+Files that already exist are skipped, so you can re-run it safely if it stops.
+"""
+
 import json
 import sys
 import time
@@ -50,6 +59,7 @@ def main():
             print(f"   giving up on {state['name']}, run the script again later")
             continue
 
+        # Keep only what we need, to make the files smaller
         params = raw["properties"]["parameter"]
         slim = {
             "state": state,

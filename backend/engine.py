@@ -11,10 +11,10 @@ from states import STATES_BY_ID
 
 PRIORITIES = {
     "balanced": {"label": "A good balance", "weights": {"water": 0.3, "climate": 0.3, "soil": 0.2, "income": 0.2}},
-    "water": {"label": "Use less water", "weights": {"water": 0.45, "climate": 0.3, "soil": 0.1, "income": 0.15}},
-    "soil": {"label": "Improve my soil", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.45, "income": 0.15}},
-    "income": {"label": "Earn more", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.15, "income": 0.45}},
-    "risk": {"label": "Lower my risk", "weights": {"water": 0.25, "climate": 0.5, "soil": 0.1, "income": 0.15}},
+    "water": {"label": "Save water", "weights": {"water": 0.45, "climate": 0.3, "soil": 0.1, "income": 0.15}},
+    "soil": {"label": "Improve soil", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.45, "income": 0.15}},
+    "income": {"label": "Higher income", "weights": {"water": 0.15, "climate": 0.25, "soil": 0.15, "income": 0.45}},
+    "risk": {"label": "Lower risk", "weights": {"water": 0.25, "climate": 0.5, "soil": 0.1, "income": 0.15}},
 }
 
 
@@ -69,10 +69,20 @@ def resilience(crop: dict, profile: dict) -> float:
 # ---------- rotation level ----------
 
 def _join(names: list[str]) -> str:
-    names = [n.split(" (")[0] for n in names]  # "Cowpea (beans)" -> "Cowpea"
+    """["Millet", "Beans (cowpea)"] -> "millet and beans" (lowercase, for mid-sentence)."""
+    names = [n.split(" (")[0].lower() for n in names]
     if len(names) <= 1:
         return "".join(names)
     return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def _plural(names: list[str]) -> bool:
+    """True if the subject needs a plural verb ("beans add", "millet and beans add")."""
+    return len(names) > 1 or names[0].split(" (")[0].endswith("s")
+
+
+def _cap(text: str) -> str:
+    return text[:1].upper() + text[1:]
 
 
 def _crops_in(rotation: dict) -> list[str]:
@@ -153,21 +163,21 @@ def explain(rotation_id: str, profile: dict, state_name: str, current_id: str) -
 
     if any(c["fixesNitrogen"] for c in crops):
         legume_names = [c["name"] for c in crops if c["fixesNitrogen"]]
-        verb = "adds" if len(legume_names) == 1 else "add"
-        benefits.append(f"{_join(legume_names)} {verb} nitrogen to the soil, so the next cereal needs less fertiliser.")
+        verb = "add" if _plural(legume_names) else "adds"
+        benefits.append(_cap(f"{_join(legume_names)} {verb} nitrogen to the soil, so the next cereal needs less fertiliser."))
     if any(len(s) > 1 for s in rotation["seasons"]):
         benefits.append("Intercropping gives two harvests from one field, so one crop failing does not mean losing everything.")
     if len({c["family"] for c in crops}) > 1:
         benefits.append("Changing crop families breaks pest and disease cycles that build up when one crop is grown every year.")
     hardy = [c["name"] for c in crops if c["droughtTolerance"] >= 4]
     if hardy and profile["falseOnsetRate"] >= 0.15:
-        benefits.append(f"{_join(hardy)} can survive the dry spells that often follow the first rains here.")
+        benefits.append(_cap(f"{_join(hardy)} can survive the dry spells that often follow the first rains here."))
     if any(c["fodderValue"] >= 4 for c in crops):
         benefits.append("Leaves and stalks make good animal feed, an extra source of value for mixed farms.")
 
     for c in crops:
         if water_fit(c, profile) < 60:
-            risks.append(f"{_join([c['name']])} may not get enough water in a dry year here.")
+            risks.append(_cap(f"{_join([c['name']])} may not get enough water in a dry year here."))
         if season_fit(c, profile) < 60:
             risks.append(f"The season can be too short for slower {_join([c['name']]).lower()} varieties. Choose early-maturing seed.")
     if rotation["seasons"][0] == rotation["seasons"][1]:
@@ -175,19 +185,27 @@ def explain(rotation_id: str, profile: dict, state_name: str, current_id: str) -
     if "groundnut" in crop_ids:
         risks.append("Groundnut must be dried and stored well to avoid aflatoxin, which can make the crop unsellable.")
     if "soybean" in crop_ids:
-        risks.append("Soybean may need inoculant on land where it has not been grown before.")
+        risks.append("Soya beans may need inoculant on land where they have not been grown before.")
     if "sesame" in crop_ids:
-        risks.append("Sesame prices depend on export buyers, so check local demand before switching.")
+        risks.append("Beniseed prices depend on export buyers, so check local demand before switching.")
     if any(len(s) > 1 for s in rotation["seasons"]):
         risks.append("Intercropping needs careful spacing and a bit more labour at weeding time.")
 
     why = rotation["description"]
     if rotation_id != current_id:
+        reasons = []
         hardy_names = [c["name"] for c in crops if c["droughtTolerance"] >= 4]
-        if profile["falseOnsetRate"] >= 0.3 and hardy_names:
-            why = f"Rain here is unreliable early in the season, and {_join(hardy_names)} handle that better."
-        elif any(c["fixesNitrogen"] for c in crops):
-            why = "Adds a legume that feeds the soil, while keeping a crop that sells well."
+        if profile["falseOnsetRate"] >= 0.15 and hardy_names:
+            reasons.append(f"{_join(hardy_names)} cope{'s' if not _plural(hardy_names) else ''} better with the dry spells that follow the first rains here")
+        legumes = [c["name"] for c in crops if c["fixesNitrogen"]]
+        if legumes:
+            reasons.append(f"{_join(legumes)} feed{'' if _plural(legumes) else 's'} the soil with nitrogen")
+        cash = [c["name"] for c in crops if c["marketValue"] >= 5]
+        if cash:
+            reasons.append(f"{_join(cash)} sell{'' if _plural(cash) else 's'} well")
+        if reasons:
+            why = (reasons[0][0].upper() + reasons[0][1:] + (", " + ", ".join(reasons[1:-1]) if len(reasons) > 2 else "")
+                   + (" and " + reasons[-1] if len(reasons) > 1 else "") + ".")
 
     return {
         "why": why,
