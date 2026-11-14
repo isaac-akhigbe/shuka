@@ -46,3 +46,46 @@ body {
 .marker-high {
   animation: shuka-pulse 2s ease-in-out infinite;
 }
+
+/* Landing page motion */
+@keyframes shuka-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes shuka-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.08); }
+}
+@keyframes shuka-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  80%, 100% { transform: scale(2.4); opacity: 0; }
+}
+.grow-bar {
+  transform-origin: bottom;
+  animation: shuka-grow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.float-blob {
+  animation: shuka-float 14s ease-in-out infinite;
+}
+.ping-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: shuka-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+.dot-grid {
+  background-image: radial-gradient(rgba(20, 32, 26, 0.12) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .grow-bar, .float-blob, .ping-ring { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
